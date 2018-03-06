@@ -1,0 +1,51 @@
+{
+  "entities": [
+    {
+      "name": "User",
+      "deployment": "users",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "java.lang.Long",
+          "flags": [
+            "PRIMARY_KEY"
+          ]
+        },
+        {
+          "name": "username",
+          "type": "java.lang.String"
+        },
+        {
+          "name": "password",
+          "type": "java.lang.String"
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "deployment": "customers",
+      "root": {
+        "name": "User",
+        "extend": false
+      },
+      "attributes": [
+        {
+          "name": "username",
+          "type": "java.lang.String",
+          "reintroduce": true,
+          "flags": [
+            "UNIQUE"
+          ]
+        },
+        {
+          "name": "firstName",
+          "type": "java.lang.String"
+        },
+        {
+          "name": "lastName",
+          "type": "java.lang.String"
+        }
+      ]
+    }
+  ]
+}

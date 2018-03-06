@@ -1,0 +1,45 @@
+{
+  "entities": [
+    {
+      "name": "Employee",
+      "deployment": "employees",
+      "root": {
+        "name": "User",
+        "extend": false
+      },
+      "attributes": [
+        {
+          "name": "salary",
+          "type": "java.lang.Float"
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "root": {
+        "name": "User",
+        "extend": true
+      },
+      "attributes": [
+        {
+          "name": "dateOfBirth",
+          "type": "java.util.Date"
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "root": {
+        "name": "User",
+        "extend": true
+      },
+      "attributes": [
+        {
+          "name": "dateOfBirth",
+          "reintroduce": true,
+          "type": "java.time.LocalDate"
+        }
+      ]
+    }
+  ]
+}
