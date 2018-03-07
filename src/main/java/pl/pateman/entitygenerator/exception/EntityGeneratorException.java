@@ -1,4 +1,4 @@
-package pl.pateman.entitygenerator;
+package pl.pateman.entitygenerator.exception;
 
 public final class EntityGeneratorException extends RuntimeException {
 

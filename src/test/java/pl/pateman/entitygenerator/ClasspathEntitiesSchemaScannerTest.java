@@ -6,6 +6,7 @@ import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import pl.pateman.entitygenerator.exception.EntityGeneratorException;
 
 public class ClasspathEntitiesSchemaScannerTest {
 

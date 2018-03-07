@@ -9,9 +9,27 @@ repositories {
     mavenCentral()
 }
 
+task generateEntities(type: GenerateEntitiesTask, dependsOn: processResources) {
+    main 'pl.pateman.entitygenerator.gradle.GenerateEntitiesExecutor'
+    classpath sourceSets.main.runtimeClasspath
+}
+
 dependencies {
     compile 'org.reflections:reflections:0.9.11'
     compile 'com.google.code.gson:gson:2.8.2'
     compile 'org.apache.commons:commons-lang3:3.7'
+    compile 'org.freemarker:freemarker:2.3.27-incubating'
     testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+class GenerateEntitiesTask extends JavaExec {
+    def schemasPatterns = []
+    def rootDir = 'src/main/java'
+
+    @Override
+    void exec() {
+        def args = [this.rootDir, this.schemasPatterns].flatten()
+        this.args(args)
+        super.exec()
+    }
 }

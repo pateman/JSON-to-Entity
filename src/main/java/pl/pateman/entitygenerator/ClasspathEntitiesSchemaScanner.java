@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
+import pl.pateman.entitygenerator.exception.EntityGeneratorException;
 
 /**
  * Utility class which allows to scan the classpath to locate entity definitions.

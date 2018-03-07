@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import pl.pateman.entitygenerator.GeneratedEntity.Attribute;
+import pl.pateman.entitygenerator.exception.EntityGeneratorException;
 
 /**
  * Main entity generator class.
