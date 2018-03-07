@@ -1,15 +1,19 @@
 package pl.pateman.entitygenerator;
 
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Predicate;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import pl.pateman.entitygenerator.GeneratedEntity.Attribute;
 
 public class EntityGeneratorTest {
 
   private Collection<GeneratedEntity> generatedEntities;
+  private ClasspathEntitiesSchemaScanner classpathEntitiesSchemaScanner;
 
   private GeneratedEntity findBy(final Predicate<GeneratedEntity> predicate) {
     return this.generatedEntities.stream().filter(predicate).findFirst().orElse(null);
@@ -17,9 +21,9 @@ public class EntityGeneratorTest {
 
   @Before
   public void initializeTestData() {
-    final ClasspathEntitiesSchemaScanner classpathEntitiesSchemaScanner = new ClasspathEntitiesSchemaScanner();
-    final Collection<String> entitySchemas = classpathEntitiesSchemaScanner.findEntitySchemas();
-    final Collection<InputStream> streams = classpathEntitiesSchemaScanner
+    this.classpathEntitiesSchemaScanner = new ClasspathEntitiesSchemaScanner();
+    final Collection<String> entitySchemas = this.classpathEntitiesSchemaScanner.findEntitySchemas();
+    final Collection<InputStream> streams = this.classpathEntitiesSchemaScanner
         .retrieveInputStreamsToResources(entitySchemas);
     this.generatedEntities = new EntityGenerator().generateEntities(streams);
   }
@@ -40,6 +44,55 @@ public class EntityGeneratorTest {
     Assert.assertNotNull(customerEntity.getRoot());
     Assert.assertEquals(userEntity, customerEntity.getRoot());
     Assert.assertEquals(userEntity, employeeEntity.getRoot());
+  }
+
+  @Test
+  public void generateEntitiesValidEntityExtension() {
+    final GeneratedEntity userEntity = this.findBy(e -> "User".equals(e.getName()));
+    final Optional<Attribute> dateOfBirthAttrib = userEntity.getAttributes()
+        .stream()
+        .filter(attribute -> "dateOfBirth".equals(attribute.getName()))
+        .findFirst();
+    Assert.assertTrue(dateOfBirthAttrib.isPresent());
+  }
+
+  @Test
+  public void generateEntitiesValidReintroduction() {
+    final GeneratedEntity userEntity = this.findBy(e -> "User".equals(e.getName()));
+    final Attribute dateOfBirthAttrib = userEntity.getAttributes()
+        .stream()
+        .filter(attribute -> "dateOfBirth".equals(attribute.getName()))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("Missing attribute 'dateOfBirth'"));
+    Assert.assertTrue(dateOfBirthAttrib.isReintroduced());
+    Assert.assertEquals(LocalDate.class, dateOfBirthAttrib.getType());
+  }
+
+  @Test(expected = EntityGeneratorException.class)
+  public void generateEntitiesDuplicateAttributes() {
+    final Collection<String> duplicateAttribSchema = this.classpathEntitiesSchemaScanner
+        .findEntitySchemas("entitiesWithDuplicateAttributes\\.json");
+    final Collection<InputStream> inputStreams = this.classpathEntitiesSchemaScanner
+        .retrieveInputStreamsToResources(duplicateAttribSchema);
+    new EntityGenerator().generateEntities(inputStreams);
+  }
+
+  @Test(expected = EntityGeneratorException.class)
+  public void generateEntitiesDuplicateEntities() {
+    final Collection<String> duplicateEntitySchema = this.classpathEntitiesSchemaScanner
+        .findEntitySchemas("duplicatedEntities1\\.json");
+    final Collection<InputStream> inputStreams = this.classpathEntitiesSchemaScanner
+        .retrieveInputStreamsToResources(duplicateEntitySchema);
+    new EntityGenerator().generateEntities(inputStreams);
+  }
+
+  @Test(expected = EntityGeneratorException.class)
+  public void generateEntitiesNoDeployment() {
+    final Collection<String> duplicateEntitySchema = this.classpathEntitiesSchemaScanner
+        .findEntitySchemas("entitiesWithoutDeployment\\.json");
+    final Collection<InputStream> inputStreams = this.classpathEntitiesSchemaScanner
+        .retrieveInputStreamsToResources(duplicateEntitySchema);
+    new EntityGenerator().generateEntities(inputStreams);
   }
 
 }

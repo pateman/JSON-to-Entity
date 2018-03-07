@@ -4,10 +4,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 
+/**
+ * Entity metadata.
+ */
 public final class GeneratedEntity {
 
   private String name;
   private String deployment;
+  private String classFile;
   private GeneratedEntity root;
   private Collection<Attribute> attributes;
 
@@ -15,6 +19,11 @@ public final class GeneratedEntity {
 
   }
 
+  /**
+   * Returns the name of the entity.
+   *
+   * @return Entity name,
+   */
   public String getName() {
     return name;
   }
@@ -23,6 +32,11 @@ public final class GeneratedEntity {
     this.name = name;
   }
 
+  /**
+   * Returns the deployment of the entity, i.e. the table name that will be used in the database to store records.
+   *
+   * @return Entity deployment.
+   */
   public String getDeployment() {
     return deployment;
   }
@@ -31,6 +45,26 @@ public final class GeneratedEntity {
     this.deployment = deployment;
   }
 
+  /**
+   * Returns the class file of the entity, i.e. a fully-qualified name of the class which will store the entity's
+   * source code.
+   *
+   * @return Entity class file.
+   */
+  public String getClassFile() {
+    return classFile;
+  }
+
+  void setClassFile(String classFile) {
+    this.classFile = classFile;
+  }
+
+  /**
+   * Returns the reference of the root entity of this entity. Note that the root is not mandatory and can be
+   * {@code null}.
+   *
+   * @return Entity root.
+   */
   public GeneratedEntity getRoot() {
     return root;
   }
@@ -39,6 +73,11 @@ public final class GeneratedEntity {
     this.root = root;
   }
 
+  /**
+   * Returns a read-only collection of attributes that belong to this entity.
+   *
+   * @return Entity attributes.
+   */
   public Collection<Attribute> getAttributes() {
     return attributes == null ? Collections.emptyList() : Collections.unmodifiableCollection(attributes);
   }
@@ -65,6 +104,9 @@ public final class GeneratedEntity {
     return Objects.hash(name);
   }
 
+  /**
+   * Entity attribute metadata.
+   */
   public static final class Attribute {
 
     private String name;
@@ -76,6 +118,11 @@ public final class GeneratedEntity {
 
     }
 
+    /**
+     * Returns the name of the attribute.
+     *
+     * @return Attribute name.
+     */
     public String getName() {
       return name;
     }
@@ -84,6 +131,11 @@ public final class GeneratedEntity {
       this.name = name;
     }
 
+    /**
+     * Returns the class pointer which indicates what type the attribute is of.
+     *
+     * @return Attribute type.
+     */
     public Class<?> getType() {
       return type;
     }
@@ -92,6 +144,11 @@ public final class GeneratedEntity {
       this.type = type;
     }
 
+    /**
+     * Determines whether the attribute has been reintroduced.
+     *
+     * @return Whether the attribute has been reintroduced or not.
+     */
     public boolean isReintroduced() {
       return reintroduced;
     }
@@ -100,8 +157,13 @@ public final class GeneratedEntity {
       this.reintroduced = reintroduced;
     }
 
+    /**
+     * Returns a read-only collection of flags associated with this attribute.
+     *
+     * @return Attribute flags.
+     */
     public Collection<String> getFlags() {
-      return Collections.unmodifiableCollection(flags);
+      return flags == null ? Collections.emptyList() : Collections.unmodifiableCollection(flags);
     }
 
     void setFlags(Collection<String> flags) {
@@ -122,7 +184,6 @@ public final class GeneratedEntity {
 
     @Override
     public int hashCode() {
-
       return Objects.hash(name);
     }
   }

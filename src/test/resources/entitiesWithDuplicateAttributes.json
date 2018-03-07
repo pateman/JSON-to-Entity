@@ -23,29 +23,15 @@
       ]
     },
     {
-      "name": "Customer",
-      "deployment": "customers",
-      "classFile": "pl.pateman.entitygenerator.entity.CustomerEntity",
+      "name": "User",
       "root": {
         "name": "User",
-        "extend": false
+        "extend": true
       },
       "attributes": [
         {
-          "name": "username",
-          "type": "java.lang.String",
-          "reintroduce": true,
-          "flags": [
-            "UNIQUE"
-          ]
-        },
-        {
-          "name": "firstName",
-          "type": "java.lang.String"
-        },
-        {
-          "name": "lastName",
-          "type": "java.lang.String"
+          "name": "id",
+          "type": "java.lang.Long"
         }
       ]
     }

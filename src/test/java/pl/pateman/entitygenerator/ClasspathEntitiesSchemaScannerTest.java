@@ -22,6 +22,22 @@ public class ClasspathEntitiesSchemaScannerTest {
     Assert.assertFalse(entitySchemas.isEmpty());
   }
 
+  @Test
+  public void findEntitySchemasWithPattern() {
+    final Collection<String> entitySchemas = this.schemaScanner.findEntitySchemas("core-entities\\.json");
+    Assert.assertEquals(1, entitySchemas.size());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void findEntitySchemasWithNullPattern() {
+    this.schemaScanner.findEntitySchemas(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void findEntitySchemasWithEmptyPattern() {
+    this.schemaScanner.findEntitySchemas(" ");
+  }
+
   @Test(expected = IllegalArgumentException.class)
   public void retrieveInputStreamsToResourcesNullCollection() {
     this.schemaScanner.retrieveInputStreamsToResources(null);

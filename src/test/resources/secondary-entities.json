@@ -3,6 +3,7 @@
     {
       "name": "Employee",
       "deployment": "employees",
+      "classFile": "pl.pateman.entitygenerator.entity.EmployeeEntity",
       "root": {
         "name": "User",
         "extend": false

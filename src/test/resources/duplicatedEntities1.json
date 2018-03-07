@@ -23,29 +23,13 @@
       ]
     },
     {
-      "name": "Customer",
-      "deployment": "customers",
-      "classFile": "pl.pateman.entitygenerator.entity.CustomerEntity",
-      "root": {
-        "name": "User",
-        "extend": false
-      },
+      "name": "User",
+      "deployment": "users",
+      "classFile": "pl.pateman.entitygenerator.entity.UserEntity",
       "attributes": [
         {
-          "name": "username",
-          "type": "java.lang.String",
-          "reintroduce": true,
-          "flags": [
-            "UNIQUE"
-          ]
-        },
-        {
-          "name": "firstName",
-          "type": "java.lang.String"
-        },
-        {
-          "name": "lastName",
-          "type": "java.lang.String"
+          "name": "someCounter",
+          "type": "java.lang.Long"
         }
       ]
     }

@@ -7,6 +7,7 @@ final class EntityDescriptor {
 
   private String name;
   private String deployment;
+  private String classFile;
   private EntityRootDescriptor root;
   private Collection<EntityAttributeDescriptor> attributes;
 
@@ -20,6 +21,10 @@ final class EntityDescriptor {
 
   public String getDeployment() {
     return deployment;
+  }
+
+  public String getClassFile() {
+    return classFile;
   }
 
   public EntityRootDescriptor getRoot() {
