@@ -48,6 +48,107 @@
           "type": "java.lang.String"
         }
       ]
+    },
+    {
+      "name": "Address",
+      "deployment": "addresses",
+      "classFile": "pl.pateman.entitygenerator.entity.AddressEntity",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "java.lang.Long",
+          "flags": [
+            "PRIMARY_KEY"
+          ]
+        },
+        {
+          "name": "street",
+          "type": "java.lang.String"
+        },
+        {
+          "name": "zipCode",
+          "type": "java.lang.String"
+        },
+        {
+          "name": "city",
+          "type": "java.lang.String"
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "deployment": "products",
+      "classFile": "pl.pateman.entitygenerator.entity.ProductEntity",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "java.lang.Long",
+          "flags": [
+            "PRIMARY_KEY"
+          ]
+        },
+        {
+          "name": "name",
+          "type": "java.lang.String"
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "deployment": "orders",
+      "classFile": "pl.pateman.entitygenerator.entity.OrderEntity",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "java.lang.Long",
+          "flags": [
+            "PRIMARY_KEY"
+          ]
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "source": {
+        "entity": "Customer",
+        "attributeName": "orders",
+        "side": "ONE",
+        "collectionType": "LIST"
+      },
+      "target": {
+        "entity": "Order",
+        "attributeName": "customer",
+        "side": "MANY"
+      },
+      "joinColumn": "custId"
+    },
+    {
+      "source": {
+        "entity": "Order",
+        "attributeName": "deliveryAddress",
+        "side": "ONE"
+      },
+      "target": {
+        "entity": "Address",
+        "attributeName": "order",
+        "side": "ONE"
+      }
+    },
+    {
+      "source": {
+        "entity": "Order",
+        "attributeName": "product",
+        "side": "MANY",
+        "collectionType": "LIST"
+      },
+      "target": {
+        "entity": "Product",
+        "attributeName": "order",
+        "side": "MANY",
+        "collectionType": "LIST"
+      },
+      "joinTable": "order_products"
     }
   ]
 }
