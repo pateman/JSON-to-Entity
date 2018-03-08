@@ -3,6 +3,8 @@ package pl.pateman.entitygenerator;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * Entity metadata.
@@ -82,6 +84,18 @@ public final class GeneratedEntity {
     return attributes == null ? Collections.emptyList() : Collections.unmodifiableCollection(attributes);
   }
 
+  public Optional<Attribute> findAttribute(final Predicate<Attribute> predicate) {
+    if (predicate == null) {
+      throw new IllegalArgumentException("A valid predicate is required");
+    }
+
+    if (this.attributes == null) {
+      return Optional.empty();
+    }
+
+    return this.attributes.stream().filter(predicate).findFirst();
+  }
+
   void setAttributes(Collection<Attribute> attributes) {
     this.attributes = attributes;
   }
@@ -104,6 +118,51 @@ public final class GeneratedEntity {
     return Objects.hash(name);
   }
 
+  public static final class RelationInfo {
+
+    public enum CollectionType {
+      LIST,
+      SET
+    }
+
+    private GeneratedEntity target;
+    private String joinTable;
+    private String joinColumn;
+    private CollectionType collectionType;
+
+    public GeneratedEntity getTarget() {
+      return target;
+    }
+
+    void setTarget(GeneratedEntity target) {
+      this.target = target;
+    }
+
+    public String getJoinTable() {
+      return joinTable;
+    }
+
+    void setJoinTable(String joinTable) {
+      this.joinTable = joinTable;
+    }
+
+    public String getJoinColumn() {
+      return joinColumn;
+    }
+
+    void setJoinColumn(String joinColumn) {
+      this.joinColumn = joinColumn;
+    }
+
+    public CollectionType getCollectionType() {
+      return collectionType;
+    }
+
+    void setCollectionType(CollectionType collectionType) {
+      this.collectionType = collectionType;
+    }
+  }
+
   /**
    * Entity attribute metadata.
    */
@@ -113,6 +172,7 @@ public final class GeneratedEntity {
     private Class<?> type;
     private boolean reintroduced;
     private Collection<String> flags;
+    private RelationInfo relationInfo;
 
     Attribute() {
 
@@ -168,6 +228,14 @@ public final class GeneratedEntity {
 
     void setFlags(Collection<String> flags) {
       this.flags = flags;
+    }
+
+    public RelationInfo getRelationInfo() {
+      return relationInfo;
+    }
+
+    void setRelationInfo(RelationInfo relationInfo) {
+      this.relationInfo = relationInfo;
     }
 
     @Override

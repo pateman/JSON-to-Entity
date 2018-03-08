@@ -32,7 +32,7 @@ public class EntityGeneratorTest {
   @Test
   public void generateEntities() {
     Assert.assertFalse(this.generatedEntities.isEmpty());
-    Assert.assertEquals(3, this.generatedEntities.size());
+    Assert.assertEquals(6, this.generatedEntities.size());
   }
 
   @Test

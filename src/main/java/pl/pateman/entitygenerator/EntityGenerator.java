@@ -20,10 +20,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import pl.pateman.entitygenerator.EntityRelationSideDescriptor.Side;
 import pl.pateman.entitygenerator.GeneratedEntity.Attribute;
+import pl.pateman.entitygenerator.GeneratedEntity.RelationInfo;
+import pl.pateman.entitygenerator.GeneratedEntity.RelationInfo.CollectionType;
 import pl.pateman.entitygenerator.exception.EntityGeneratorException;
 
 /**
@@ -116,18 +120,18 @@ public final class EntityGenerator {
    * {@link EntityGenerator#validateSchemaDescriptor(EntitySchemaDescriptor)}.
    *
    * @param schemaStream Input stream with the JSON schema to parse.
+   * @return An {@link EntitySchemaDescriptor} with parsed entity descriptors and relations.
    * @throws EntityGeneratorException If there's a problem with reading the stream, or if validation fails.
-   * @return A {@link Collection<EntityDescriptor>} with parsed entity descriptors.
    */
-  private Collection<EntityDescriptor> generateEntitiesFromSchema(final InputStream schemaStream) {
+  private EntitySchemaDescriptor parseSchemaStream(final InputStream schemaStream) {
     try (final JsonReader jsonReader = new JsonReader(new InputStreamReader(schemaStream))) {
 
       final EntitySchemaDescriptor schemaDescriptor = this.gson.fromJson(jsonReader, SCHEMA_DESCRIPTOR_TYPE);
       this.validateSchemaDescriptor(schemaDescriptor);
 
-      return new ArrayList<>(schemaDescriptor.getEntities());
+      return schemaDescriptor;
     } catch (final IOException e) {
-      throw new EntityGeneratorException("Unable to generate entities from schema", e);
+      throw new EntityGeneratorException("Unable to parse schema", e);
     } finally {
       try {
         schemaStream.close();
@@ -186,9 +190,9 @@ public final class EntityGenerator {
    * final - after all descriptors have been processed, it can be used to generate actual source files.
    *
    * @param entityDescriptor Entity descriptor to process.
+   * @param outcome A {@link Map<String, GeneratedEntity>} which holds the result of the processing.
    * @throws EntityGeneratorException If either any {@link EntityAttributeDescriptor#getType()} denotes a Java class
    * which couldn't be found or if there are duplicate attribute definitions.
-   * @param outcome A {@link Map<String, GeneratedEntity>} which holds the result of the processing.
    */
   private void processEntityDescriptor(final EntityDescriptor entityDescriptor,
       final Map<String, GeneratedEntity> outcome) {
@@ -258,26 +262,137 @@ public final class EntityGenerator {
     outcome.put(entityDescriptor.getName(), generatedEntity);
   }
 
+  private void validateRelationSideDescriptor(final EntityRelationSideDescriptor relationSideDescriptor) {
+    if (StringUtils.isBlank(relationSideDescriptor.getEntity())) {
+      throw new EntityGeneratorException("Invalid relation side definition. A valid entity name is required");
+    }
+    if (StringUtils.isBlank(relationSideDescriptor.getAttributeName())) {
+      throw new EntityGeneratorException("Invalid relation side definition. A valid attribute name is required");
+    }
+    if (relationSideDescriptor.getSide() == null) {
+      throw new EntityGeneratorException("Invalid relation side definition. A relation side is required");
+    }
+  }
+
+  private void validateRelationDescriptorAttribute(final GeneratedEntity entity, final String attributeName) {
+    final Optional<Attribute> existingAttribute = entity.findAttribute(a -> attributeName.equals(a.getName()));
+    if (existingAttribute.isPresent()) {
+      throw new EntityGeneratorException(
+          "Invalid relation definition. Attribute '" + attributeName + "' is already defined on entity '" + entity
+              .getName() + "'");
+    }
+  }
+
+  private void validateRelationDescriptor(final EntityRelationDescriptor relationDescriptor,
+      final Map<String, GeneratedEntity> generatedEntityMap) {
+    final EntityRelationSideDescriptor source = relationDescriptor.getSource();
+    final EntityRelationSideDescriptor target = relationDescriptor.getTarget();
+
+    if (source == null || target == null) {
+      throw new EntityGeneratorException("Invalid relation definition. Both source and target are required");
+    }
+
+    this.validateRelationSideDescriptor(source);
+    this.validateRelationSideDescriptor(target);
+
+    if (!generatedEntityMap.containsKey(source.getEntity())) {
+      throw new EntityGeneratorException("Invalid relation definition. Source side points to an unknown entity");
+    }
+    if (!generatedEntityMap.containsKey(target.getEntity())) {
+      throw new EntityGeneratorException("Invalid relation definition. Target side points to an unknown entity");
+    }
+
+    this.validateRelationDescriptorAttribute(generatedEntityMap.get(source.getEntity()), source.getAttributeName());
+    this.validateRelationDescriptorAttribute(generatedEntityMap.get(target.getEntity()), target.getAttributeName());
+  }
+
+  private Attribute createRelationAttribute(final String attributeName,
+      final EntityRelationSideDescriptor.CollectionType collectionType, final GeneratedEntity targetEntity,
+      final String joinColumn, final String joinTable) {
+    final Attribute attribute = new Attribute();
+    attribute.setName(attributeName);
+    attribute.setReintroduced(false);
+
+    final RelationInfo relationInfo = new RelationInfo();
+    relationInfo.setTarget(targetEntity);
+    relationInfo.setJoinColumn(joinColumn);
+    relationInfo.setJoinTable(joinTable);
+
+    if (collectionType != null) {
+      attribute.setType(EntityRelationSideDescriptor.CollectionType.LIST
+          .equals(collectionType) ? List.class : Set.class);
+      relationInfo.setCollectionType(EntityRelationSideDescriptor.CollectionType.LIST
+          .equals(collectionType) ? CollectionType.LIST : CollectionType.SET);
+    } else {
+      //  TODO Needs refactoring
+//      Class.fo
+//      attribute.setType(targetEntity.);
+    }
+
+    attribute.setRelationInfo(relationInfo);
+    return attribute;
+  }
+
+  private void processRelationDescriptors(final EntitySchemaDescriptor schemaDescriptor,
+      final Map<String, GeneratedEntity> generatedEntities) {
+    final Collection<EntityRelationDescriptor> relations = schemaDescriptor.getRelations();
+    if (relations.isEmpty()) {
+      return;
+    }
+
+    for (final EntityRelationDescriptor relation : relations) {
+      this.validateRelationDescriptor(relation, generatedEntities);
+
+      final GeneratedEntity sourceEntity = generatedEntities.get(relation.getSource().getEntity());
+      final GeneratedEntity targetEntity = generatedEntities.get(relation.getTarget().getEntity());
+
+      final List<Attribute> sourceAttribs = new ArrayList<>(sourceEntity.getAttributes());
+      final List<Attribute> targetAttribs = new ArrayList<>(targetEntity.getAttributes());
+
+      //  One -> Many relation.
+      if (Side.ONE.equals(relation.getSource().getSide()) && Side.MANY.equals(relation.getTarget().getSide())) {
+        final Attribute sourceAttrib = this
+            .createRelationAttribute(relation.getSource().getAttributeName(), relation.getSource().getCollectionType(),
+                targetEntity, relation.getJoinColumn(), relation.getJoinTable());
+        final Attribute targetAttrib = this
+            .createRelationAttribute(relation.getTarget().getAttributeName(), null, sourceEntity,
+                relation.getJoinColumn(), relation.getJoinTable());
+
+        sourceAttribs.add(sourceAttrib);
+        targetAttribs.add(targetAttrib);
+      }
+
+      sourceEntity.setAttributes(sourceAttribs);
+      targetEntity.setAttributes(targetAttribs);
+    }
+  }
+
   /**
    * Generates entity metadata from the given input streams of schema definitions.
    *
    * Each input stream is expected to be a JSON schema, which is then parsed, validated, and converted
-   * into a {@link GeneratedEntity}. Refer to {@link EntityGenerator#generateEntitiesFromSchema(InputStream)} and
+   * into a {@link GeneratedEntity}. Refer to {@link EntityGenerator#parseSchemaStream(InputStream)} and
    * {@link EntityGenerator#processEntityDescriptor(EntityDescriptor, Map)} to learn more about the process.
    *
    * @param schemaStreams A collection of JSON schema input streams which should be processed.
+   * @return A {@link Collection<GeneratedEntity>} of converted entity definitions.
    * @throws IllegalArgumentException If the JSON schema streams collection is either {@code null} or empty.
    * @throws EntityGeneratorException If there is a problem during the operation (for instance, validation fails).
-   * @return A {@link Collection<GeneratedEntity>} of converted entity definitions.
    */
   public Collection<GeneratedEntity> generateEntities(final Collection<InputStream> schemaStreams) {
     if (schemaStreams == null || schemaStreams.isEmpty()) {
       throw new IllegalArgumentException("A valid schemas collection is required");
     }
 
-    final Map<String, List<EntityDescriptor>> unsortedDescriptors = schemaStreams
+    //  Parse schema streams first.
+    final List<EntitySchemaDescriptor> schemaDescriptors = schemaStreams
         .stream()
-        .flatMap(s -> this.generateEntitiesFromSchema(s).stream())
+        .map(this::parseSchemaStream)
+        .collect(Collectors.toList());
+
+    final Map<String, List<EntityDescriptor>> unsortedDescriptors = schemaDescriptors
+        .stream()
+        .flatMap(s -> s.getEntities().stream())
         .collect(Collectors.groupingBy(EntityDescriptor::getName));
     this.validateDuplicateEntities(unsortedDescriptors);
 
@@ -302,6 +417,9 @@ public final class EntityGenerator {
     final Map<String, GeneratedEntity> generatedEntityMap = new HashMap<>(entityDescriptors.size());
     entityDescriptors.forEach((name, descriptors) -> descriptors
         .forEach(descriptor -> this.processEntityDescriptor(descriptor, generatedEntityMap)));
+
+    //  Finally, process relations.
+    schemaDescriptors.forEach(sd -> this.processRelationDescriptors(sd, generatedEntityMap));
 
     return generatedEntityMap.values();
   }
