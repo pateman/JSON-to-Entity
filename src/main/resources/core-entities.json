@@ -46,6 +46,10 @@
         {
           "name": "lastName",
           "type": "java.lang.String"
+        },
+        {
+          "name": "dateOfBirth",
+          "type": "java.util.Date"
         }
       ]
     }

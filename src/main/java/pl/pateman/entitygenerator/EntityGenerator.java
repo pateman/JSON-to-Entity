@@ -230,12 +230,7 @@ public final class EntityGenerator {
         .map(entityAttributeDescriptor -> {
           final Attribute attribute = new Attribute();
           attribute.setName(entityAttributeDescriptor.getName());
-          try {
-            attribute.setType(Class.forName(entityAttributeDescriptor.getType()));
-          } catch (final ClassNotFoundException e) {
-            throw new EntityGeneratorException(
-                "Unable to locate class for attribute '" + entityAttributeDescriptor.getName() + "'", e);
-          }
+          attribute.setType(entityAttributeDescriptor.getType());
 
           //  Reintroducing an attribute means that another descriptor (which either extends or inherits from another
           //  entity) provides an alternative definition of an attribute which is present in the root definition.
@@ -306,6 +301,18 @@ public final class EntityGenerator {
     this.validateRelationDescriptorAttribute(generatedEntityMap.get(target.getEntity()), target.getAttributeName());
   }
 
+  private String createGenericCollectionType(final EntityRelationSideDescriptor.CollectionType collectionType,
+      final String itemClass) {
+    final String collectionClass;
+    if (EntityRelationSideDescriptor.CollectionType.LIST
+        .equals(collectionType)) {
+      collectionClass = List.class.getCanonicalName();
+    } else {
+      collectionClass = Set.class.getCanonicalName();
+    }
+    return collectionClass + "<" + itemClass + ">";
+  }
+
   private Attribute createRelationAttribute(final String attributeName,
       final EntityRelationSideDescriptor.CollectionType collectionType, final GeneratedEntity targetEntity,
       final String joinColumn, final String joinTable) {
@@ -319,14 +326,11 @@ public final class EntityGenerator {
     relationInfo.setJoinTable(joinTable);
 
     if (collectionType != null) {
-      attribute.setType(EntityRelationSideDescriptor.CollectionType.LIST
-          .equals(collectionType) ? List.class : Set.class);
+      attribute.setType(this.createGenericCollectionType(collectionType, targetEntity.getClassFile()));
       relationInfo.setCollectionType(EntityRelationSideDescriptor.CollectionType.LIST
           .equals(collectionType) ? CollectionType.LIST : CollectionType.SET);
     } else {
-      //  TODO Needs refactoring
-//      Class.fo
-//      attribute.setType(targetEntity.);
+      attribute.setType(targetEntity.getClassFile());
     }
 
     attribute.setRelationInfo(relationInfo);

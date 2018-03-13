@@ -169,7 +169,7 @@ public final class GeneratedEntity {
   public static final class Attribute {
 
     private String name;
-    private Class<?> type;
+    private String type;
     private boolean reintroduced;
     private Collection<String> flags;
     private RelationInfo relationInfo;
@@ -192,15 +192,15 @@ public final class GeneratedEntity {
     }
 
     /**
-     * Returns the class pointer which indicates what type the attribute is of.
+     * Returns the fully-qualified class name of the attribute.
      *
      * @return Attribute type.
      */
-    public Class<?> getType() {
+    public String getType() {
       return type;
     }
 
-    void setType(Class<?> type) {
+    void setType(String type) {
       this.type = type;
     }
 

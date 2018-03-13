@@ -66,7 +66,7 @@ public class EntityGeneratorTest {
         .findFirst()
         .orElseThrow(() -> new IllegalStateException("Missing attribute 'dateOfBirth'"));
     Assert.assertTrue(dateOfBirthAttrib.isReintroduced());
-    Assert.assertEquals(LocalDate.class, dateOfBirthAttrib.getType());
+    Assert.assertEquals(LocalDate.class.getCanonicalName(), dateOfBirthAttrib.getType());
   }
 
   @Test(expected = EntityGeneratorException.class)

@@ -1,24 +1,32 @@
 package ${packageName};
 
+<#list imports?keys as imp>
+<#if !imp?starts_with("java.lang")>
+import ${imp};
+</#if>
+</#list>
+
 @Entity
 @Table(name = "${entity.deployment}")
 public class ${entity.name}Entity {
 
   <#list entity.attributes as attr>
+  <#assign attrType = imports[attr.type]>
   <#if attr.flags?seq_contains("PRIMARY_KEY")>
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   </#if>
-  private ${attr.type.simpleName} ${attr.name};
+  private ${attrType} ${attr.name};
   </#list>
 
   <#list entity.attributes as attr>
   <#assign capitalizedAttr = attr.name?cap_first>
-  public ${attr.type.simpleName} get${capitalizedAttr}() {
+  <#assign attrType = imports[attr.type]>
+  public ${attrType} get${capitalizedAttr}() {
     return this.${attr.name};
   }
 
-  public void set${capitalizedAttr}(${attr.type.simpleName} value) {
+  public void set${capitalizedAttr}(${attrType} value) {
     this.${attr.name} = value;
   }
 
