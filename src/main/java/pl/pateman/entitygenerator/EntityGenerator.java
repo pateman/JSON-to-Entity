@@ -337,6 +337,26 @@ public final class EntityGenerator {
     return attribute;
   }
 
+  private void createOneToMany(EntityRelationDescriptor relation, GeneratedEntity sourceEntity,
+      GeneratedEntity targetEntity, List<Attribute> sourceAttribs, List<Attribute> targetAttribs) {
+    final Attribute sourceAttrib = this
+        .createRelationAttribute(relation.getSource().getAttributeName(), relation.getSource().getCollectionType(),
+            targetEntity, relation.getJoinColumn(), relation.getJoinTable());
+    final Attribute targetAttrib = this
+        .createRelationAttribute(relation.getTarget().getAttributeName(), null, sourceEntity,
+            relation.getJoinColumn(), relation.getJoinTable());
+
+    sourceAttrib.getRelationInfo().setTargetAttribute(targetAttrib);
+    sourceAttrib.getRelationInfo().setSide(Side.ONE.equals(relation.getSource().getSide()) ? RelationInfo.Side.ONE : RelationInfo.Side.MANY);
+
+    targetAttrib.getRelationInfo().setTargetAttribute(sourceAttrib);
+    targetAttrib.getRelationInfo()
+        .setSide(Side.ONE.equals(relation.getTarget().getSide()) ? RelationInfo.Side.ONE : RelationInfo.Side.MANY);
+
+    sourceAttribs.add(sourceAttrib);
+    targetAttribs.add(targetAttrib);
+  }
+
   private void processRelationDescriptors(final EntitySchemaDescriptor schemaDescriptor,
       final Map<String, GeneratedEntity> generatedEntities) {
     final Collection<EntityRelationDescriptor> relations = schemaDescriptor.getRelations();
@@ -353,17 +373,18 @@ public final class EntityGenerator {
       final List<Attribute> sourceAttribs = new ArrayList<>(sourceEntity.getAttributes());
       final List<Attribute> targetAttribs = new ArrayList<>(targetEntity.getAttributes());
 
-      //  One -> Many relation.
-      if (Side.ONE.equals(relation.getSource().getSide()) && Side.MANY.equals(relation.getTarget().getSide())) {
-        final Attribute sourceAttrib = this
-            .createRelationAttribute(relation.getSource().getAttributeName(), relation.getSource().getCollectionType(),
-                targetEntity, relation.getJoinColumn(), relation.getJoinTable());
-        final Attribute targetAttrib = this
-            .createRelationAttribute(relation.getTarget().getAttributeName(), null, sourceEntity,
-                relation.getJoinColumn(), relation.getJoinTable());
-
-        sourceAttribs.add(sourceAttrib);
-        targetAttribs.add(targetAttrib);
+      final Side sourceSide = relation.getSource().getSide();
+      final Side targetSide = relation.getTarget().getSide();
+      if ((Side.ONE.equals(sourceSide) && Side.MANY.equals(targetSide)) ||
+          (Side.MANY.equals(sourceSide) && Side.ONE.equals(targetSide))) {
+        //  One -> Many relation.
+        this.createOneToMany(relation, sourceEntity, targetEntity, sourceAttribs, targetAttribs);
+      } else if (Side.ONE.equals(sourceSide) && Side.ONE.equals(targetSide)) {
+        //  One -> One relation.
+      } else if (Side.MANY.equals(sourceSide) && Side.MANY.equals(targetSide)) {
+        //  Many -> Many relation.
+      } else {
+        throw new EntityGeneratorException("Invalid relation definiton. Unknown relation type");
       }
 
       sourceEntity.setAttributes(sourceAttribs);

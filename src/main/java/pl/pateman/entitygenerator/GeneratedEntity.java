@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Entity metadata.
@@ -96,6 +97,13 @@ public final class GeneratedEntity {
     return this.attributes.stream().filter(predicate).findFirst();
   }
 
+  public Optional<Attribute> findAttribute(final String attributeName) {
+    if (StringUtils.isBlank(attributeName)) {
+      throw new IllegalArgumentException("A valid attribute name is required");
+    }
+    return this.findAttribute(a -> attributeName.equalsIgnoreCase(a.getName()));
+  }
+
   void setAttributes(Collection<Attribute> attributes) {
     this.attributes = attributes;
   }
@@ -125,10 +133,37 @@ public final class GeneratedEntity {
       SET
     }
 
+    public enum Side {
+      ONE,
+      MANY
+    }
+
+    public enum Type {
+      ONE_TO_ONE,
+      ONE_TO_MANY,
+      MANY_TO_MANY
+    }
+
     private GeneratedEntity target;
+    private Attribute targetAttribute;
     private String joinTable;
     private String joinColumn;
     private CollectionType collectionType;
+    private Side side;
+
+    public Type getType() {
+      final Side targetSide = this.targetAttribute.getRelationInfo().getSide();
+      if (Side.ONE.equals(this.side) && Side.ONE.equals(targetSide)) {
+        return Type.ONE_TO_ONE;
+      } else if ((Side.ONE.equals(this.side) && Side.MANY.equals(targetSide)) || (Side.MANY.equals(this.side)
+          && Side.ONE.equals(targetSide))) {
+        return Type.ONE_TO_MANY;
+      } else if (Side.MANY.equals(this.side) && Side.MANY.equals(targetSide)) {
+        return Type.MANY_TO_MANY;
+      } else {
+        throw new IllegalStateException("Invalid relation type");
+      }
+    }
 
     public GeneratedEntity getTarget() {
       return target;
@@ -136,6 +171,14 @@ public final class GeneratedEntity {
 
     void setTarget(GeneratedEntity target) {
       this.target = target;
+    }
+
+    public Attribute getTargetAttribute() {
+      return targetAttribute;
+    }
+
+    void setTargetAttribute(Attribute targetAttribute) {
+      this.targetAttribute = targetAttribute;
     }
 
     public String getJoinTable() {
@@ -160,6 +203,14 @@ public final class GeneratedEntity {
 
     void setCollectionType(CollectionType collectionType) {
       this.collectionType = collectionType;
+    }
+
+    public Side getSide() {
+      return side;
+    }
+
+    void setSide(Side side) {
+      this.side = side;
     }
   }
 
