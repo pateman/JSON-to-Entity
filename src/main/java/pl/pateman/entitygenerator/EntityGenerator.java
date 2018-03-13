@@ -337,8 +337,8 @@ public final class EntityGenerator {
     return attribute;
   }
 
-  private void createOneToMany(EntityRelationDescriptor relation, GeneratedEntity sourceEntity,
-      GeneratedEntity targetEntity, List<Attribute> sourceAttribs, List<Attribute> targetAttribs) {
+  private void createOneToMany(final EntityRelationDescriptor relation, final GeneratedEntity sourceEntity,
+      final GeneratedEntity targetEntity, final List<Attribute> sourceAttribs, final List<Attribute> targetAttribs) {
     final Attribute sourceAttrib = this
         .createRelationAttribute(relation.getSource().getAttributeName(), relation.getSource().getCollectionType(),
             targetEntity, relation.getJoinColumn(), relation.getJoinTable());
@@ -347,11 +347,32 @@ public final class EntityGenerator {
             relation.getJoinColumn(), relation.getJoinTable());
 
     sourceAttrib.getRelationInfo().setTargetAttribute(targetAttrib);
-    sourceAttrib.getRelationInfo().setSide(Side.ONE.equals(relation.getSource().getSide()) ? RelationInfo.Side.ONE : RelationInfo.Side.MANY);
+    sourceAttrib.getRelationInfo()
+        .setSide(Side.ONE.equals(relation.getSource().getSide()) ? RelationInfo.Side.ONE : RelationInfo.Side.MANY);
 
     targetAttrib.getRelationInfo().setTargetAttribute(sourceAttrib);
     targetAttrib.getRelationInfo()
         .setSide(Side.ONE.equals(relation.getTarget().getSide()) ? RelationInfo.Side.ONE : RelationInfo.Side.MANY);
+
+    sourceAttribs.add(sourceAttrib);
+    targetAttribs.add(targetAttrib);
+  }
+
+  private void createOneToOne(final EntityRelationDescriptor relation, final GeneratedEntity sourceEntity,
+      final GeneratedEntity targetEntity, final List<Attribute> sourceAttribs, final List<Attribute> targetAttribs) {
+    final Attribute sourceAttrib = this.createRelationAttribute(relation.getSource().getAttributeName(), null,
+        targetEntity, relation.getJoinColumn(), relation.getJoinTable());
+    final Attribute targetAttrib = this
+        .createRelationAttribute(relation.getTarget().getAttributeName(), null, sourceEntity,
+            relation.getJoinColumn(), relation.getJoinTable());
+
+    sourceAttrib.getRelationInfo().setTargetAttribute(targetAttrib);
+    sourceAttrib.getRelationInfo().setSide(RelationInfo.Side.ONE);
+    sourceAttrib.getRelationInfo().setSource(true);
+
+    targetAttrib.getRelationInfo().setTargetAttribute(sourceAttrib);
+    targetAttrib.getRelationInfo().setSide(RelationInfo.Side.ONE);
+    targetAttrib.getRelationInfo().setSource(false);
 
     sourceAttribs.add(sourceAttrib);
     targetAttribs.add(targetAttrib);
@@ -381,6 +402,7 @@ public final class EntityGenerator {
         this.createOneToMany(relation, sourceEntity, targetEntity, sourceAttribs, targetAttribs);
       } else if (Side.ONE.equals(sourceSide) && Side.ONE.equals(targetSide)) {
         //  One -> One relation.
+        this.createOneToOne(relation, sourceEntity, targetEntity, sourceAttribs, targetAttribs);
       } else if (Side.MANY.equals(sourceSide) && Side.MANY.equals(targetSide)) {
         //  Many -> Many relation.
       } else {

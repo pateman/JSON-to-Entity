@@ -150,6 +150,7 @@ public final class GeneratedEntity {
     private String joinColumn;
     private CollectionType collectionType;
     private Side side;
+    private boolean source;
 
     public Type getType() {
       final Side targetSide = this.targetAttribute.getRelationInfo().getSide();
@@ -211,6 +212,14 @@ public final class GeneratedEntity {
 
     void setSide(Side side) {
       this.side = side;
+    }
+
+    public boolean isSource() {
+      return source;
+    }
+
+    void setSource(boolean source) {
+      this.source = source;
     }
   }
 

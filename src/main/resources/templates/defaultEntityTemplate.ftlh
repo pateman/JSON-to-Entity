@@ -21,7 +21,9 @@ public class ${entity.name}Entity {
       <#assign rel = attr.relationInfo>
       <#assign relType = rel.getType()>
       <#if relType.name() == "ONE_TO_ONE">
+        <#if rel.isSource()>
   @OneToOne
+        </#if>
       <#elseif relType.name() == "ONE_TO_MANY">
         <#if rel.side.name() == "ONE">
   @OneToMany
