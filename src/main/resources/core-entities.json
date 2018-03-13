@@ -148,7 +148,8 @@
         "side": "MANY",
         "collectionType": "LIST"
       },
-      "joinTable": "order_products"
+      "joinTable": "order_products",
+      "joinColumn": "id,id"
     }
   ]
 }

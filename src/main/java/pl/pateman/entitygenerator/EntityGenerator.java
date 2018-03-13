@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -349,10 +350,12 @@ public final class EntityGenerator {
     sourceAttrib.getRelationInfo().setTargetAttribute(targetAttrib);
     sourceAttrib.getRelationInfo()
         .setSide(Side.ONE.equals(relation.getSource().getSide()) ? RelationInfo.Side.ONE : RelationInfo.Side.MANY);
+    sourceAttrib.getRelationInfo().setSource(true);
 
     targetAttrib.getRelationInfo().setTargetAttribute(sourceAttrib);
     targetAttrib.getRelationInfo()
         .setSide(Side.ONE.equals(relation.getTarget().getSide()) ? RelationInfo.Side.ONE : RelationInfo.Side.MANY);
+    targetAttrib.getRelationInfo().setSource(false);
 
     sourceAttribs.add(sourceAttrib);
     targetAttribs.add(targetAttrib);
@@ -373,6 +376,38 @@ public final class EntityGenerator {
     targetAttrib.getRelationInfo().setTargetAttribute(sourceAttrib);
     targetAttrib.getRelationInfo().setSide(RelationInfo.Side.ONE);
     targetAttrib.getRelationInfo().setSource(false);
+
+    sourceAttribs.add(sourceAttrib);
+    targetAttribs.add(targetAttrib);
+  }
+
+  private void createManyToMany(final EntityRelationDescriptor relation, final GeneratedEntity sourceEntity,
+      final GeneratedEntity targetEntity, final List<Attribute> sourceAttribs, final List<Attribute> targetAttribs) {
+    final Attribute sourceAttrib = this
+        .createRelationAttribute(relation.getSource().getAttributeName(), relation.getSource().getCollectionType(),
+            targetEntity, "", relation.getJoinTable());
+    final Attribute targetAttrib = this
+        .createRelationAttribute(relation.getTarget().getAttributeName(), relation.getTarget().getCollectionType(),
+            sourceEntity, "", relation.getJoinTable());
+
+    sourceAttrib.getRelationInfo().setTargetAttribute(targetAttrib);
+    sourceAttrib.getRelationInfo().setSide(RelationInfo.Side.MANY);
+    sourceAttrib.getRelationInfo().setSource(true);
+
+    targetAttrib.getRelationInfo().setTargetAttribute(sourceAttrib);
+    targetAttrib.getRelationInfo().setSide(RelationInfo.Side.MANY);
+    targetAttrib.getRelationInfo().setSource(false);
+
+    final String joinColumn = relation.getJoinColumn();
+    if (StringUtils.isNotBlank(joinColumn)) {
+      final String[] joinColumns = Arrays
+          .stream(joinColumn.split(","))
+          .map(StringUtils::trim)
+          .toArray(String[]::new);
+
+      sourceAttrib.getRelationInfo().setJoinColumn(joinColumns[0]);
+      targetAttrib.getRelationInfo().setJoinColumn(joinColumns.length > 1 ? joinColumns[1] : joinColumns[0]);
+    }
 
     sourceAttribs.add(sourceAttrib);
     targetAttribs.add(targetAttrib);
@@ -405,6 +440,7 @@ public final class EntityGenerator {
         this.createOneToOne(relation, sourceEntity, targetEntity, sourceAttribs, targetAttribs);
       } else if (Side.MANY.equals(sourceSide) && Side.MANY.equals(targetSide)) {
         //  Many -> Many relation.
+        this.createManyToMany(relation, sourceEntity, targetEntity, sourceAttribs, targetAttribs);
       } else {
         throw new EntityGeneratorException("Invalid relation definiton. Unknown relation type");
       }

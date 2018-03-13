@@ -29,9 +29,17 @@ public class ${entity.name}Entity {
   @OneToMany
         <#else>
   @ManyToOne
+  @JoinColumn(name="${rel.joinColumn}")
         </#if>
       <#elseif relType.name() == "MANY_TO_MANY">
+        <#if !rel.isSource()>
+  @ManyToMany(mappedBy="${rel.targetAttribute.name}")
+        <#else>
   @ManyToMany
+  @JoinTable(name="${rel.joinTable}",
+        joinColumns=@JoinColumn(name="${entity.deployment}_id", referencedColumnName="${rel.joinColumn}"),
+        inverseJoinColumns=@JoinColumn(name="${rel.target.deployment}_id", referencedColumnName="${rel.targetAttribute.relationInfo.joinColumn}"))
+        </#if>
       </#if>
     </#if>
   private ${attrType} ${attr.name};
