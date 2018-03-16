@@ -258,6 +258,12 @@ public final class EntityGenerator {
     outcome.put(entityDescriptor.getName(), generatedEntity);
   }
 
+  /**
+   * Validates the given relation side descriptor.
+   *
+   * @param relationSideDescriptor Relation side descriptor.
+   * @throws EntityGeneratorException If there is a violation.
+   */
   private void validateRelationSideDescriptor(final EntityRelationSideDescriptor relationSideDescriptor) {
     if (StringUtils.isBlank(relationSideDescriptor.getEntity())) {
       throw new EntityGeneratorException("Invalid relation side definition. A valid entity name is required");
@@ -270,8 +276,16 @@ public final class EntityGenerator {
     }
   }
 
+  /**
+   * Checks whether the given entity has an attribute by the given name. It is used during the validation stage of
+   * relation generation.
+   *
+   * @param entity Entity which the check should be performed against.
+   * @param attributeName Attribute name to find.
+   * @throws EntityGeneratorException If the attribute exists.
+   */
   private void validateRelationDescriptorAttribute(final GeneratedEntity entity, final String attributeName) {
-    final Optional<Attribute> existingAttribute = entity.findAttribute(a -> attributeName.equals(a.getName()));
+    final Optional<Attribute> existingAttribute = entity.findAttribute(attributeName);
     if (existingAttribute.isPresent()) {
       throw new EntityGeneratorException(
           "Invalid relation definition. Attribute '" + attributeName + "' is already defined on entity '" + entity
@@ -279,6 +293,13 @@ public final class EntityGenerator {
     }
   }
 
+  /**
+   * Validates the given relation descriptor.
+   *
+   * @param relationDescriptor Relation descriptor to validate.
+   * @param generatedEntityMap A {@link Map<String, GeneratedEntity>} which holds the result of the processing.
+   * @throws EntityGeneratorException If there is a violation.
+   */
   private void validateRelationDescriptor(final EntityRelationDescriptor relationDescriptor,
       final Map<String, GeneratedEntity> generatedEntityMap) {
     final EntityRelationSideDescriptor source = relationDescriptor.getSource();
@@ -302,11 +323,18 @@ public final class EntityGenerator {
     this.validateRelationDescriptorAttribute(generatedEntityMap.get(target.getEntity()), target.getAttributeName());
   }
 
+  /**
+   * Helper method which composes a class name of a generic collection (either a list or set) which holds elements of
+   * the given class.
+   *
+   * @param collectionType Collection type.
+   * @param itemClass Element class.
+   * @return Class name of the collection (for example: 'List<UserEntity>')
+   */
   private String createGenericCollectionType(final EntityRelationSideDescriptor.CollectionType collectionType,
       final String itemClass) {
     final String collectionClass;
-    if (EntityRelationSideDescriptor.CollectionType.LIST
-        .equals(collectionType)) {
+    if (EntityRelationSideDescriptor.CollectionType.LIST.equals(collectionType)) {
       collectionClass = List.class.getCanonicalName();
     } else {
       collectionClass = Set.class.getCanonicalName();
@@ -314,6 +342,17 @@ public final class EntityGenerator {
     return collectionClass + "<" + itemClass + ">";
   }
 
+  /**
+   * Creates an attribute which describes a relation between entities.
+   *
+   * @param attributeName Attribute name.
+   * @param collectionType Collection type of the relation. If not given, a direct reference to the target
+   * entity is created.
+   * @param targetEntity Target entity of the relation.
+   * @param joinColumn Join column of the relation.
+   * @param joinTable Join table of the relation.
+   * @return An {@link Attribute} which describes the relation.
+   */
   private Attribute createRelationAttribute(final String attributeName,
       final EntityRelationSideDescriptor.CollectionType collectionType, final GeneratedEntity targetEntity,
       final String joinColumn, final String joinTable) {
@@ -338,11 +377,21 @@ public final class EntityGenerator {
     return attribute;
   }
 
+  /**
+   * Generates a one-to-many relation between the given source and target entity.
+   *
+   * @param relation Relation descriptor.
+   * @param sourceEntity Source entity of the relation.
+   * @param targetEntity Target entity of the relation.
+   * @param sourceAttribs List of attributes of the source entity.
+   * @param targetAttribs List of attributes of the target entity.
+   */
   private void createOneToMany(final EntityRelationDescriptor relation, final GeneratedEntity sourceEntity,
       final GeneratedEntity targetEntity, final List<Attribute> sourceAttribs, final List<Attribute> targetAttribs) {
     final Attribute sourceAttrib = this
         .createRelationAttribute(relation.getSource().getAttributeName(), relation.getSource().getCollectionType(),
             targetEntity, relation.getJoinColumn(), relation.getJoinTable());
+    //  Target attribute is not a collection.
     final Attribute targetAttrib = this
         .createRelationAttribute(relation.getTarget().getAttributeName(), null, sourceEntity,
             relation.getJoinColumn(), relation.getJoinTable());
@@ -361,8 +410,18 @@ public final class EntityGenerator {
     targetAttribs.add(targetAttrib);
   }
 
+  /**
+   * Generates a one-to-one relation between the given source and target entity.
+   *
+   * @param relation Relation descriptor.
+   * @param sourceEntity Source entity of the relation.
+   * @param targetEntity Target entity of the relation.
+   * @param sourceAttribs List of attributes of the source entity.
+   * @param targetAttribs List of attributes of the target entity.
+   */
   private void createOneToOne(final EntityRelationDescriptor relation, final GeneratedEntity sourceEntity,
       final GeneratedEntity targetEntity, final List<Attribute> sourceAttribs, final List<Attribute> targetAttribs) {
+    //  Neither attributes are collections, so they reference each other directly.
     final Attribute sourceAttrib = this.createRelationAttribute(relation.getSource().getAttributeName(), null,
         targetEntity, relation.getJoinColumn(), relation.getJoinTable());
     final Attribute targetAttrib = this
@@ -381,14 +440,24 @@ public final class EntityGenerator {
     targetAttribs.add(targetAttrib);
   }
 
+  /**
+   * Generates a many-to-many relation between the given source and target entity.
+   *
+   * @param relation Relation descriptor.
+   * @param sourceEntity Source entity of the relation.
+   * @param targetEntity Target entity of the relation.
+   * @param sourceAttribs List of attributes of the source entity.
+   * @param targetAttribs List of attributes of the target entity.
+   */
   private void createManyToMany(final EntityRelationDescriptor relation, final GeneratedEntity sourceEntity,
       final GeneratedEntity targetEntity, final List<Attribute> sourceAttribs, final List<Attribute> targetAttribs) {
+    //  Join columns are filled in later in the process.
     final Attribute sourceAttrib = this
         .createRelationAttribute(relation.getSource().getAttributeName(), relation.getSource().getCollectionType(),
-            targetEntity, "", relation.getJoinTable());
+            targetEntity, StringUtils.EMPTY, relation.getJoinTable());
     final Attribute targetAttrib = this
         .createRelationAttribute(relation.getTarget().getAttributeName(), relation.getTarget().getCollectionType(),
-            sourceEntity, "", relation.getJoinTable());
+            sourceEntity, StringUtils.EMPTY, relation.getJoinTable());
 
     sourceAttrib.getRelationInfo().setTargetAttribute(targetAttrib);
     sourceAttrib.getRelationInfo().setSide(RelationInfo.Side.MANY);
@@ -398,6 +467,10 @@ public final class EntityGenerator {
     targetAttrib.getRelationInfo().setSide(RelationInfo.Side.MANY);
     targetAttrib.getRelationInfo().setSource(false);
 
+    //  A many-to-many relation has a special use case for the join column field. You can use a comma to provide
+    //  join columns for both the source and the target entity separately.
+    //
+    //  In case there's only one column defined, it will be used for both entities.
     final String joinColumn = relation.getJoinColumn();
     if (StringUtils.isNotBlank(joinColumn)) {
       final String[] joinColumns = Arrays
@@ -413,6 +486,16 @@ public final class EntityGenerator {
     targetAttribs.add(targetAttrib);
   }
 
+  /**
+   * Processes a schema descriptor, validates it, and generates entity relations from it.
+   *
+   * Note that this step should be executed AFTER entity descriptors have been parsed and processed, so that the
+   * outcome map is already prepared.
+   *
+   * @param schemaDescriptor Schema descriptor.
+   * @param generatedEntities A {@link Map<String, GeneratedEntity>} which holds the result of the processing.
+   * @throws EntityGeneratorException If there is a validation violation.
+   */
   private void processRelationDescriptors(final EntitySchemaDescriptor schemaDescriptor,
       final Map<String, GeneratedEntity> generatedEntities) {
     final Collection<EntityRelationDescriptor> relations = schemaDescriptor.getRelations();
@@ -421,6 +504,7 @@ public final class EntityGenerator {
     }
 
     for (final EntityRelationDescriptor relation : relations) {
+      //  Start off by validating relation descriptors.
       this.validateRelationDescriptor(relation, generatedEntities);
 
       final GeneratedEntity sourceEntity = generatedEntities.get(relation.getSource().getEntity());
@@ -431,6 +515,10 @@ public final class EntityGenerator {
 
       final Side sourceSide = relation.getSource().getSide();
       final Side targetSide = relation.getTarget().getSide();
+
+      //  Depending on the sides, branch out to appropriate methods. Note that we're passing lists of attributes
+      //  to each method, because they're supposed to create and add attributes that define the relation to respective
+      //  entities.
       if ((Side.ONE.equals(sourceSide) && Side.MANY.equals(targetSide)) ||
           (Side.MANY.equals(sourceSide) && Side.ONE.equals(targetSide))) {
         //  One -> Many relation.

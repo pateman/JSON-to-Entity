@@ -13,7 +13,12 @@ import pl.pateman.entitygenerator.ClasspathEntitiesSchemaScanner;
 import pl.pateman.entitygenerator.EntityGenerator;
 import pl.pateman.entitygenerator.GeneratedEntity;
 import pl.pateman.entitygenerator.SourceFileGenerator;
+import pl.pateman.entitygenerator.generate.impl.FreemarkerGenerator;
 
+/**
+ * An example class which could be called from a Gradle scripts, which looks up entity schemas in the classpath,
+ * and generates source code for them.
+ */
 final class GenerateEntitiesExecutor {
 
   public static void main(String[] args) {
@@ -42,7 +47,7 @@ final class GenerateEntitiesExecutor {
     final EntityGenerator entityGenerator = new EntityGenerator();
     final Collection<GeneratedEntity> generatedEntities = entityGenerator.generateEntities(inputStreams);
 
-    final SourceFileGenerator sourceFileGenerator = new SourceFileGenerator();
+    final SourceFileGenerator sourceFileGenerator = new SourceFileGenerator(new FreemarkerGenerator());
     for (final GeneratedEntity generatedEntity : generatedEntities) {
       final String sourceFile = sourceFileGenerator.generateSourceFile(generatedEntity);
 

@@ -85,6 +85,12 @@ public final class GeneratedEntity {
     return attributes == null ? Collections.emptyList() : Collections.unmodifiableCollection(attributes);
   }
 
+  /**
+   * Returns an attribute that matches the given predicate.
+   *
+   * @param predicate A valid predicate that should be used to locate an attribute.
+   * @return An {@link Optional<Attribute>} which holds a reference to the attribute.
+   */
   public Optional<Attribute> findAttribute(final Predicate<Attribute> predicate) {
     if (predicate == null) {
       throw new IllegalArgumentException("A valid predicate is required");
@@ -97,6 +103,12 @@ public final class GeneratedEntity {
     return this.attributes.stream().filter(predicate).findFirst();
   }
 
+  /**
+   * Finds an attribute under the given name.
+   *
+   * @param attributeName Name of the attribute to find.
+   * @return An {@link Optional<Attribute>} which holds a reference to the attribute.
+   */
   public Optional<Attribute> findAttribute(final String attributeName) {
     if (StringUtils.isBlank(attributeName)) {
       throw new IllegalArgumentException("A valid attribute name is required");
@@ -126,18 +138,33 @@ public final class GeneratedEntity {
     return Objects.hash(name);
   }
 
+  /**
+   * Entity relation metadata.
+   */
   public static final class RelationInfo {
 
+    /**
+     * Collection type of the relation.
+     */
     public enum CollectionType {
       LIST,
       SET
     }
 
+    /**
+     * Relation side.
+     *
+     * A side is either {@code ONE} or {@code MANY}. For example, in a one-to-many relation, the source of the relation
+     * will have its {@link RelationInfo#side) set to {@code ONE}, and the target to {@code MANY}.
+     */
     public enum Side {
       ONE,
       MANY
     }
 
+    /**
+     * Relation type.
+     */
     public enum Type {
       ONE_TO_ONE,
       ONE_TO_MANY,
@@ -152,6 +179,15 @@ public final class GeneratedEntity {
     private Side side;
     private boolean source;
 
+    RelationInfo() {
+
+    }
+
+    /**
+     * Determines what type of relation it is.
+     *
+     * @return The relation {@link Type}.
+     */
     public Type getType() {
       final Side targetSide = this.targetAttribute.getRelationInfo().getSide();
       if (Side.ONE.equals(this.side) && Side.ONE.equals(targetSide)) {
@@ -166,6 +202,11 @@ public final class GeneratedEntity {
       }
     }
 
+    /**
+     * Returns the target side of the relation.
+     *
+     * @return A {@link GeneratedEntity} which is the target side of this relation.
+     */
     public GeneratedEntity getTarget() {
       return target;
     }
@@ -174,6 +215,11 @@ public final class GeneratedEntity {
       this.target = target;
     }
 
+    /**
+     * Returns the target attribute of the relation. The attribute is owned by the target side of the relation.
+     *
+     * @return A target {@link Attribute} of the relation.
+     */
     public Attribute getTargetAttribute() {
       return targetAttribute;
     }
@@ -182,6 +228,11 @@ public final class GeneratedEntity {
       this.targetAttribute = targetAttribute;
     }
 
+    /**
+     * Returns the join table of this relation.
+     *
+     * @return Relation join table.
+     */
     public String getJoinTable() {
       return joinTable;
     }
@@ -190,6 +241,11 @@ public final class GeneratedEntity {
       this.joinTable = joinTable;
     }
 
+    /**
+     * Returns the join column of this relation.
+     *
+     * @return Relation join column.
+     */
     public String getJoinColumn() {
       return joinColumn;
     }
@@ -198,6 +254,11 @@ public final class GeneratedEntity {
       this.joinColumn = joinColumn;
     }
 
+    /**
+     * Returns the collection type of this relation.
+     *
+     * @return Relation collection type.
+     */
     public CollectionType getCollectionType() {
       return collectionType;
     }
@@ -206,6 +267,12 @@ public final class GeneratedEntity {
       this.collectionType = collectionType;
     }
 
+    /**
+     * Returns the side of this relation.
+     *
+     * @see Side
+     * @return Relation side.
+     */
     public Side getSide() {
       return side;
     }
@@ -214,6 +281,11 @@ public final class GeneratedEntity {
       this.side = side;
     }
 
+    /**
+     * Determines whether this entity is the source of this relation.
+     *
+     * @return {@code true} if it is, {@code false} otherwise.
+     */
     public boolean isSource() {
       return source;
     }
